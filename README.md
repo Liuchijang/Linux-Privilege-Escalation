@@ -22,10 +22,10 @@ This document contains a list of privilege escalation techniques in Linux and ho
 SUID or GUID, when set, allows the process to execute under the specified user or group.
 List all binary with suid/guid:
 ```cmd
-find / -perm -4000 -exec ls -ld {} \; 2>/dev/null
-find / -perm -u=s -exec ls -ld {} \; 2>/dev/null
-find / -perm -2000 -exec ls -ld {} \; 2>/dev/null
-find / -perm -g=s -exec ls -ld {} \; 2>/dev/null
+find / -perm -4000 -ls 2>/dev/null
+find / -perm -u=s -ls 2>/dev/null
+find / -perm -2000 -ls 2>/dev/null
+find / -perm -g=s -ls 2>/dev/null
 ```
 Using [GTFOBins](https://gtfobins.github.io/) to privesc and get a shell.
 
