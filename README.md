@@ -16,14 +16,6 @@ Gaining knowledge of system to exploit
 
 ## Docker Breakout
 
-## Drivers
-```sh
-ls /dev 2>/dev/null | grep -i "sd"
-cat /etc/fstab 2>/dev/null | grep -v "^#" | grep -Pv "\W*\#" 2>/dev/null
-#Check if credentials in fstab
-grep -E "(user|username|login|pass|password|pw|credentials)[=:]" /etc/fstab /etc/mtab 2>/dev/null
-```
-
 ## Usefull software
 List usefull binaries
 ```sh
@@ -34,21 +26,22 @@ Check version of the installed packages and services
 dpkg -l #Debian
 rpm -qa #Centos
 ```
-## Arbitrary File Write to Root
+## Scheduled//Cron jobs
 
-## Cisco - vmanage
+## Services
 
-## Containerd (ctr) Privilege Escalation
+## Timers
 
-## D-Bus Enumeration & Command Injection Privilege Escalation
+## Containerd (ctr) privilege escalation
 
-## Docker Security
+## RunC privilege escalation
 
+## D-Bus
 
-## Escaping from Jails
+## Users
 
-
-## euid, ruid, suid
+## Writeable PATH abuses
+### euid, ruid, suid
 
 SUID or GUID, when set, allows the process to execute under the specified user or group.
 List all binary with suid/guid:
@@ -72,21 +65,11 @@ int main(void) {
     return 0;
 }
 ```
+## Shared Object Hijacking
 
-## Interesting Groups - Linux Privesc
+## Capabilities
 
-
-## Logstash
-
-
-## ld.so privesc exploit example
-
-
-## Linux Active Directory
-
-
-## Linux Capabilities
-
+## ACLs
 
 ## NFS no_root_squash/no_all_squash misconfiguration PE
 This is a misconfiguration in the NFS configuration. If the options no_root_squash or no_all_squash are found in ```/etc/exports```, then you can access it from a client and write inside that directory as if you were the local root of the machine.
@@ -105,28 +88,6 @@ cd <SHAREDD_FOLDER>
 Or use a **C SUID payloads** (see in [euid, ruid, suid]())
 
 [NFS_privesc](https://www.errno.fr/nfs_privesc.html)
-
-## Node inspector/CEF debug abuse
-
-
-## Payloads to execute
-
-
-## RunC Privilege Escalation
-
-
-## SELinux
-
-
-## Socket Command Injection
-
-
-## Splunk LPE and Persistence
-
-
-## SSH Forward Agent exploitation
-
-## Wildcards Spare tricks
 
 # Hardening (System configuration)
 [Linux configuration](https://cyber.gouv.fr/en/publications/configuration-recommendations-gnulinux-system)
