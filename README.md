@@ -2,7 +2,7 @@
 
 This document contains a list of privilege escalation techniques in Linux and how to harden the system to prevent them.
 
-[Technicques](https://book.hacktricks.xyz/linux-hardening/privilege-escalation) 
+[Techniques](https://book.hacktricks.xyz/linux-hardening/privilege-escalation) 
 
 ## System Information
 
